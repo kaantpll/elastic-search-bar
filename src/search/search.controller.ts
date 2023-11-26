@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import { SearchService } from './search.service';
 
 @Controller('api/v1/search')
@@ -10,63 +10,67 @@ export class SearchController {
   async getAllIndexes() {
     return await this.searchService.getAllIndices();
   }
-  @Get('all')
+  @Get(':name')
   @HttpCode(200)
-  async getAll() {
-    return await this.searchService.getAll();
-  }
-  @Get('match')
-  @HttpCode(200)
-  async mathQuery(@Query('query') searchQuery: string) {
-    return await this.searchService.matchQuery(searchQuery);
+  async getIndex(@Param('name') name: string) {
+    return await this.searchService.getIndexByName(name);
   }
 
-  @Get('term')
+  @Get('getAll/:name')
+  @HttpCode(200)
+  async getAll(@Param(':name') name: string) {
+    return await this.searchService.getAllData(name);
+  }
+
+  @Post('match')
+  @HttpCode(200)
+  async mathQuery(
+    @Query('query') searchQuery: string,
+    @Query('field') field: string
+  ) {
+    return await this.searchService.matchQuery(searchQuery, field);
+  }
+
+  @Post('term')
   @HttpCode(200)
   async termQuery(
     @Query('query') searchQuery: string,
-    @Query('field') field: string,
+    @Query('field') field: string
   ) {
     return await this.searchService.termQuery(searchQuery, field);
   }
 
-  @Get('bool')
+  @Post('bool')
   @HttpCode(200)
   async boolQuery(@Query('query') searchQuery: string) {
-    return await this.searchService.matchQuery(searchQuery);
+    // return await this.searchService.matchQuery(searchQuery);
   }
 
-  @Get('fuzzy')
+  @Post('fuzzy')
   @HttpCode(200)
   async fuzzyQuery(
     @Query('field') field: string,
-    @Query('value') value: string,
-    @Query('fuzziness') fuzziness: string,
+    @Query('query') value: string,
+    @Query('fuzziness') fuzziness: string
   ) {
     return await this.searchService.fuzzyQuery(field, value, fuzziness);
   }
 
-  @Get('range')
+  @Post('range')
   @HttpCode(200)
   async rangeQuery(
     @Query('field') field: string,
     @Query('lower') lower: string,
-    @Query('upper') upper: string,
+    @Query('upper') upper: string
   ) {
     return await this.searchService.rangeQuery(field, lower, upper);
   }
 
-  @Get('range')
-  @HttpCode(200)
-  async wildQuery(@Query('query') searchQuery: string) {
-    //  return await this.searchService.wildQuery(searchQuery);
-  }
-
-  @Get('prefix')
+  @Post('prefix')
   @HttpCode(200)
   async prefixQuery(
     @Query('field') field: string,
-    @Query('value') value: string,
+    @Query('query') value: string
   ) {
     return await this.searchService.prefixQuery(field, value);
   }

@@ -1,4 +1,5 @@
 import {
+  ConsoleLogger,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -10,6 +11,19 @@ import { ElasticSearchConstants } from './constants';
 export class SearchService {
   constructor(private readonly elasticsearchService: ElasticsearchService) {}
 
+  async getIndexByName(name: string) {
+    try {
+      const result = await this.elasticsearchService.cat.indices({
+        format: 'json',
+      });
+
+      const response = result.find((e) => e.index === name);
+
+      return await this.getAll(response.index);
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
   async getAllIndices() {
     const result = await this.elasticsearchService.cat.indices({
       format: 'json',
@@ -17,10 +31,10 @@ export class SearchService {
 
     return result.map((e) => e.index);
   }
-  async getAll() {
+  async getAll(index: string) {
     try {
       const result = await this.elasticsearchService.search({
-        index: ElasticSearchConstants.INDEX_NAME,
+        index,
         body: {
           query: {
             match_all: {},
@@ -28,25 +42,42 @@ export class SearchService {
         },
       });
 
-      return result;
+      return result.hits.hits[0]._source;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
     }
   }
-  async matchQuery(searchQuery: string) {
+
+  async getAllData(index: string) {
+    try {
+      const result = await this.elasticsearchService.search({
+        index,
+        body: {
+          query: {
+            match_all: {},
+          },
+        },
+      });
+
+      return result.hits.hits.map((e) => e._source);
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+  async matchQuery(searchQuery: string, field: string) {
     try {
       const result = await this.elasticsearchService.search({
         index: ElasticSearchConstants.INDEX_NAME,
         body: {
           query: {
             match: {
-              text_entry: searchQuery,
+              [field]: searchQuery,
             },
           },
         },
       });
 
-      return result;
+      return result.hits.hits[0]._source;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
     }
@@ -59,13 +90,13 @@ export class SearchService {
         body: {
           query: {
             term: {
-              [field]: query,
+              [`${field}.keyword`]: query,
             },
           },
         },
       });
 
-      return result;
+      return result.hits.hits[0]._source;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
     }
@@ -103,7 +134,7 @@ export class SearchService {
         },
       });
 
-      return result;
+      return result.hits.hits[0]._source;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
     }
@@ -125,34 +156,12 @@ export class SearchService {
         },
       });
 
-      return result;
+      return result.hits.hits[0]._source;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
     }
   }
 
-  //TODO: -> It will be Change
-  async wildCardQuery(field: string, wildCard: string) {
-    try {
-      const result = await this.elasticsearchService.search({
-        index: ElasticSearchConstants.INDEX_NAME,
-        body: {
-          query: {
-            wildcard: {
-              [field]: {
-                wildcard: wildCard,
-                value: wildCard + '',
-              },
-            },
-          },
-        },
-      });
-
-      return result;
-    } catch (error) {
-      throw new InternalServerErrorException(error.message);
-    }
-  }
   async prefixQuery(field: string, value: string) {
     try {
       const result = await this.elasticsearchService.search({
@@ -160,7 +169,7 @@ export class SearchService {
         body: {
           query: {
             prefix: {
-              [field]: {
+              [`${field}.keyword`]: {
                 value,
               },
             },
@@ -168,7 +177,7 @@ export class SearchService {
         },
       });
 
-      return result;
+      return result.hits.hits[0]._source;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
     }
