@@ -1,0 +1,324 @@
+{{! prettier-ignore }}
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>ElasticSearch Queries</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .custom-button {
+      margin: 5px;
+      padding: 10px;
+      background-color: #313131;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .keys-buttons {
+      border: 2px solid grey;
+      border-radius: 10px;
+      padding: 1rem;
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+
+    }
+
+    .keys-buttons:focus {
+      border: 2px solid rgb(240, 240, 240);
+    }
+
+    .custom-button:hover {
+      background-color: rgb(92, 92, 92)
+    }
+
+    .myCheckbox {
+      height: 20px;
+      width: 20px;
+    }
+
+    .queryText {
+      color: white;
+      font-weight: 600;
+      font-size: 22;
+    }
+  </style>
+
+</head>
+
+<body class="bg-zinc-900">
+  <div class="
+      mx-auto 
+      max-w-[1440px]
+      p-4
+      md:px-10
+      flex flex-col
+      md:flex-row
+      gap-4
+      ">
+
+    <div class="flex flex-col gap-4 w-1/2">
+
+      <form id="myForm" class="flex flex-col justify-between gap-4 p-4">
+        <p class="font-bold text-xl text-white">Queries</p>
+        <div class="flex flex-col gap-4 ">
+
+          <div class="flex flex-row  items-center gap-4 border-2 p-4 rounded-lg">
+            <input type="checkbox" id="checkbox1" name="checkbox1" class="myCheckbox" value="match">
+            <label for="checkbox1" class="queryText">Match Query</label>
+          </div>
+
+          <div class="flex flex-row  items-center gap-4  border-2 p-4 rounded-lg">
+            <input type="checkbox" id="checkbox2" name="checkbox2" class="myCheckbox" value="term">
+            <label for="checkbox2" class="queryText">Term Query</label>
+          </div>
+
+          <div class="flex flex-row  items-center gap-4  border-2 p-4 rounded-lg">
+            <input type="checkbox" id="checkbox3" name="checkbox3" class="myCheckbox" value="fuzzy">
+            <label for="checkbox3" class="queryText">Fuzzy Query</label>
+            <input id="fuzzy" placeholder="Fuzzy" type="number" class="p-1 rounded-lg w-[80px]" />
+          </div>
+
+          <div class="flex flex-row  items-center gap-4  border-2 p-4 rounded-lg">
+            <input type="checkbox" id="checkbox4" name="checkbox4" class="myCheckbox" style="padding: 1rem;"
+              value="range">
+            <label for="checkbox4" class="queryText">Range Query</label>
+            <input id="upper" placeholder="Upper" type="number" width="auto" class=" w-[80px] p-1 rounded-lg" />
+            <input id="down" placeholder="Lower" type="number" class="p-1 rounded-lg w-[80px]" />
+          </div>
+
+          <div class="flex flex-row  items-center gap-4  border-2 p-4 rounded-lg">
+            <input type="checkbox" id="checkbox4" name="checkbox4" class="myCheckbox" value="prefix">
+            <label for="checkbox4" class="queryText">Prefix Query</label>
+          </div>
+
+          <div class="flex flex-row  items-center gap-4  border-2 p-4 rounded-lg">
+            <input type="checkbox" id="checkbox4" name="checkbox4" class="myCheckbox" value="autoComplete">
+            <label for="checkbox4" class="queryText">Autocomplete Suggester</label>
+          </div>
+        </div>
+        <div class="flex flex-row gap-2 border-2 p-2 rounded-md ">
+          <p class="text-white text-bold">Selected Field :</p>
+          <p id="selectedField" class="queryText"></p>
+        </div>
+        <input type="text" id="myInput" placeholder="Type here" class="p-4 border-2 rounded-lg">
+        <div>
+          <p id="selectedFieldText" class="text-white"></p>
+          <p id="errorMessage" class="text-red-500" style="display: none;"></p>
+        </div>
+
+        <div>
+          <div id="loading" style="display: none; text-white">Loading...</div>
+          <div id="result-container" class="border-2 rounded-lg p-4 min-h-min overflow-x-auto mw-full">
+            <p class="queryText">Result</p>
+          </div>
+        </div>
+      </form>
+
+    </div>
+
+    <div class="flex flex-col w-1/2 p-4">
+      <p class="font-bold text-xl queryText">Indexes</p>
+      <div id="buttons-container" class="flex flex-row gap-4 mt-10">
+      </div>
+      <button class="w-full border-2 border-white rounded-lg p-4 mb-10 hover:bg-zinc-500" onclick="showAllData()">
+        <p class="text-xl text-white">See All Data</p>
+      </button>
+
+      <div id="json-result" class="overflow-y-auto max-h-[900px] flex flex-col gap-4 text-white">
+      </div>
+    </div>
+
+
+  </div>
+
+  <script>
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+      fetchDataAndDisplay('shakespeare');
+    });
+
+    const buttonsContainer = document.getElementById('buttons-container');
+    const resultContainer = document.getElementById('result-container');
+    const indexResult = document.getElementById('json-result')
+    const inputElement = document.getElementById('myInput');
+    const checkboxes = document.querySelectorAll('.myCheckbox');
+    const fuzzyCheckBox = document.getElementById('fuzzy')
+    const upperCheckBox = document.getElementById('upper')
+    const downCheckBox = document.getElementById('down')
+    const selectedFieldValue = document.getElementById('selectedField')
+
+    let lastSelectedCheckbox = null;
+    let selectedField = null
+    let lastSelectedValue = null;
+
+    checkboxes.forEach((checkbox) => {
+      checkbox.addEventListener('change', handleCheckboxChange);
+    });
+
+    function handleCheckboxChange() {
+
+
+      const clickedCheckbox = event.target;
+      const isChecked = clickedCheckbox.checked;
+
+      if (isChecked) {
+        checkboxes.forEach((checkbox) => {
+          if (checkbox !== clickedCheckbox) {
+            checkbox.disabled = true;
+          }
+        });
+
+        lastSelectedCheckbox = clickedCheckbox;
+
+      } else {
+        checkboxes.forEach((checkbox) => {
+          checkbox.disabled = false;
+        });
+
+        lastSelectedCheckbox = null;
+      }
+
+    }
+
+    fetchIndexes();
+
+    function fetchIndexes() {
+      fetch('http://localhost:3000/api/v1/search/indexes')
+        .then((e) => e.json())
+        .then((res) => {
+          res.forEach((index) => {
+            var button = document.createElement('button');
+
+            button.textContent = index;
+
+            button.classList.add('custom-button');
+
+            button.addEventListener('click', () => {
+              fetchDataAndDisplay(index);
+            });
+
+            buttonsContainer.appendChild(button);
+          });
+        });
+    }
+
+    function fetchDataAndDisplay(index = null) {
+      fetch(`http://localhost:3000/api/v1/search/${index ?? 'shakespeare'}`)
+        .then((response) => response.json())
+        .then((data) => {
+          const keys = Object.keys(data);
+
+          indexResult.innerHTML = '';
+          keys.forEach((e) => {
+            const button = document.createElement('button');
+            button.textContent = e;
+
+            button.classList.add('keys-buttons');
+            button.addEventListener('click', () => {
+              selectedField = e
+              selectedFieldValue.textContent = selectedField
+            });
+
+            indexResult.appendChild(button);
+
+          });
+        })
+        .catch((error) => console.error('Hata:', error));
+    }
+
+    function focusInputElement() {
+      inputElement.focus();
+    }
+    inputElement.addEventListener('input', () => {
+
+      focusInputElement();
+
+      console.log("field", selectedField)
+      console.log("checkbox", lastSelectedCheckbox?.value)
+
+      if (!selectedField) {
+
+        showErrorMessage('Please select a field before typing.');
+        inputElement.value = '';
+
+      }
+      else {
+
+        hideErrorMessage();
+
+        if (lastSelectedCheckbox && selectedField) {
+          const query = inputElement.value;
+          const field = selectedField;
+
+          let fuzzyValue, upperValue, downValue;
+          let URL = `http://localhost:3000/api/v1/search/${lastSelectedCheckbox.value}?query=${inputElement.value}&field=${selectedField}`
+
+          if (lastSelectedCheckbox.value === 'fuzzy') {
+            fuzzyValue = fuzzyCheckBox.value;
+            URL = `http://localhost:3000/api/v1/search/${lastSelectedCheckbox.value}?query=${inputElement.value}&field=${selectedField}&fuzziness=${fuzzyValue}`
+          } else if (lastSelectedCheckbox.value === 'range') {
+            upperValue = upperCheckBox.value;
+            downValue = downCheckBox.value;
+            URL = `http://localhost:3000/api/v1/search/${lastSelectedCheckbox.value}?field=${selectedField}&lowwer=${downValue}&upper=${upperValue}`
+          }
+
+          fetch(URL, {
+            method: 'POST'
+          })
+            .then((e) => e.json())
+            .then((res) => {
+              if (res.statusCode) {
+                resultContainer.innerHTML = 'No Result!'
+                resultContainer.style.color = 'white'
+                resultContainer.style.fontSize = 22
+                resultContainer.style.fontWeight = 600
+              }
+              else {
+
+                resultContainer.innerHTML = (JSON.stringify(res))
+                resultContainer.style.color = 'white'
+                resultContainer.style.fontSize = 22
+                resultContainer.style.fontWeight = 600
+              }
+
+            })
+        }
+      }
+
+    })
+
+    function showAllData(name) {
+      fetch(`http://localhost:3000/api/v1/search/getAll/${name ?? 'shakespeare'}`)
+        .then((e) => e.json())
+        .then((res) => {
+
+
+          indexResult.innerHTML = JSON.stringify(res);
+
+
+
+        });
+    }
+
+    function showErrorMessage(message) {
+      const errorMessageElement = document.getElementById('errorMessage');
+      errorMessageElement.textContent = message;
+      errorMessageElement.style.display = 'block';
+    }
+
+    function hideErrorMessage() {
+      const errorMessageElement = document.getElementById('errorMessage');
+      errorMessageElement.style.display = 'none';
+    }
+
+  </script>
+</body>
+
+</html>
