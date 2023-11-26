@@ -140,7 +140,6 @@
   <script>
 
     document.addEventListener('DOMContentLoaded', function () {
-
       fetchDataAndDisplay('shakespeare');
     });
 
@@ -157,6 +156,8 @@
     let lastSelectedCheckbox = null;
     let selectedField = null
     let lastSelectedValue = null;
+
+    const BASE_URL = 'http://localhost:3000/api/v1/search'
 
     checkboxes.forEach((checkbox) => {
       checkbox.addEventListener('change', handleCheckboxChange);
@@ -190,7 +191,7 @@
     fetchIndexes();
 
     function fetchIndexes() {
-      fetch('http://localhost:3000/api/v1/search/indexes')
+      fetch(`${BASE_URL}/indexes`)
         .then((e) => e.json())
         .then((res) => {
           res.forEach((index) => {
@@ -210,7 +211,7 @@
     }
 
     function fetchDataAndDisplay(index = null) {
-      fetch(`http://localhost:3000/api/v1/search/${index ?? 'shakespeare'}`)
+      fetch(`${BASE_URL}/${index ?? 'shakespeare'}`)
         .then((response) => response.json())
         .then((data) => {
           const keys = Object.keys(data);
@@ -236,12 +237,10 @@
     function focusInputElement() {
       inputElement.focus();
     }
+
     inputElement.addEventListener('input', () => {
 
       focusInputElement();
-
-      console.log("field", selectedField)
-      console.log("checkbox", lastSelectedCheckbox?.value)
 
       if (!selectedField) {
 
@@ -258,35 +257,34 @@
           const field = selectedField;
 
           let fuzzyValue, upperValue, downValue;
-          let URL = `http://localhost:3000/api/v1/search/${lastSelectedCheckbox.value}?query=${inputElement.value}&field=${selectedField}`
+          let URL = `${BASE_URL}/${lastSelectedCheckbox.value}?query=${inputElement.value}&field=${selectedField}`
 
           if (lastSelectedCheckbox.value === 'fuzzy') {
             fuzzyValue = fuzzyCheckBox.value;
-            URL = `http://localhost:3000/api/v1/search/${lastSelectedCheckbox.value}?query=${inputElement.value}&field=${selectedField}&fuzziness=${fuzzyValue}`
+            URL = `${BASE_URL}/${lastSelectedCheckbox.value}?query=${inputElement.value}&field=${selectedField}&fuzziness=${fuzzyValue}`
           } else if (lastSelectedCheckbox.value === 'range') {
             upperValue = upperCheckBox.value;
             downValue = downCheckBox.value;
-            URL = `http://localhost:3000/api/v1/search/${lastSelectedCheckbox.value}?field=${selectedField}&lowwer=${downValue}&upper=${upperValue}`
+            URL = `${BASE_URL}/${lastSelectedCheckbox.value}?field=${selectedField}&lowwer=${downValue}&upper=${upperValue}`
           }
+
 
           fetch(URL, {
             method: 'POST'
           })
             .then((e) => e.json())
             .then((res) => {
+
               if (res.statusCode) {
                 resultContainer.innerHTML = 'No Result!'
-                resultContainer.style.color = 'white'
-                resultContainer.style.fontSize = 22
-                resultContainer.style.fontWeight = 600
+
               }
               else {
-
                 resultContainer.innerHTML = (JSON.stringify(res))
-                resultContainer.style.color = 'white'
-                resultContainer.style.fontSize = 22
-                resultContainer.style.fontWeight = 600
               }
+              resultContainer.style.color = 'white'
+              resultContainer.style.fontSize = 22
+              resultContainer.style.fontWeight = 600
 
             })
         }
@@ -294,16 +292,11 @@
 
     })
 
-    function showAllData(name) {
-      fetch(`http://localhost:3000/api/v1/search/getAll/${name ?? 'shakespeare'}`)
+    function showAllData(name = null) {
+      fetch(`${BASE_URL}/getAll/${name ?? 'shakespeare'}`)
         .then((e) => e.json())
         .then((res) => {
-
-
           indexResult.innerHTML = JSON.stringify(res);
-
-
-
         });
     }
 

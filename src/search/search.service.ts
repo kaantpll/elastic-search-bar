@@ -1,9 +1,4 @@
-import {
-  ConsoleLogger,
-  HttpException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { ElasticSearchConstants } from './constants';
 
@@ -102,17 +97,22 @@ export class SearchService {
     }
   }
 
-  //TODO: -> It will be change
-  async boolQuery(query: string) {
+  async boolQuery(query: string, field: string) {
     try {
       const result = await this.elasticsearchService.search({
         index: ElasticSearchConstants.INDEX_NAME,
         body: {
           query: {
-            bool: {},
+            bool: {
+              must: {
+                match: { [field]: query },
+              },
+            },
           },
         },
       });
+
+      return result.hits.hits;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
     }
@@ -182,11 +182,4 @@ export class SearchService {
       throw new InternalServerErrorException(error.message);
     }
   }
-
-  //TODO: Advanced Query need practice
-  //Autocomplete Suggester
-  //Highlighting
-  //Ranking Functions
-  //Aggregations
-  //Match Phrase Query
 }

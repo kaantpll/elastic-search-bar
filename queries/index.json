@@ -1,0 +1,153 @@
+
+//POST /shakespeare/_search
+{
+  "query": {
+    "match": {
+      "text_entry": "We are"
+    }
+  }
+}
+
+
+//POST /shakespeare/_search
+{
+  "query": {
+    "term": {
+      "speaker.keyword": {
+        "value": "KING HENRY IV"
+      }
+    }
+  }
+}
+
+//POST /shakespeare/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "text_entry": "war" } },
+        { "match": { "speaker.keyword": "KING HENRY IV" } }
+      ],
+      "filter": [
+        { "term": { "play_name.keyword": "Henry IV" } }
+      ]
+    
+    }
+  }
+}
+
+//POST /shakespeare/_search
+{
+  "query": {
+    "wildcard": {
+      "speaker.keyword": {
+        "value": "KING*"
+      }
+    }
+  }
+}
+
+//POST /shakespeare/_search
+{
+  "query": {
+    "prefix": {
+      "text_entry.keyword": {
+        "value": "Find"
+      }
+    }
+  }
+}
+
+
+
+
+//POST /shakespeare/_search
+{
+  "query": {
+    "fuzzy": {
+      "text_entry": {
+        "value": "shakne",
+        "fuzziness": "2"
+      }
+    }
+  }
+}
+
+// Suggester Start
+//PUT /my_index
+{
+  "mappings": {
+    "properties": {
+      "suggest": {
+        "type": "completion"
+      },
+      "other_field": {
+        "type": "text"
+      }
+    }
+  }
+}
+  
+
+//POST /my_index/_doc/1
+{
+  "suggest": {
+    "input": ["Elasticsearch", "Elasticsearch Autocomplete",],
+    "weight": 1
+  },
+  "other_field": "Some other data"
+}
+
+//POST /my_index/_search
+{
+  "suggest": {
+    "autocomplete-suggest": {
+      "prefix": "elas",
+      "completion": {
+        "field": "suggest",
+        "size": 5
+      }
+    }
+  }
+}
+
+// Suggester End
+
+
+//POST /shakespeare/_search
+{
+  "query": {
+    "range": {
+      "line_id": {
+        "gte": 5,
+        "lte": 10
+      }
+    }
+  }
+}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+}

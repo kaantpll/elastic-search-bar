@@ -40,12 +40,6 @@ export class SearchController {
     return await this.searchService.termQuery(searchQuery, field);
   }
 
-  @Post('bool')
-  @HttpCode(200)
-  async boolQuery(@Query('query') searchQuery: string) {
-    // return await this.searchService.matchQuery(searchQuery);
-  }
-
   @Post('fuzzy')
   @HttpCode(200)
   async fuzzyQuery(
