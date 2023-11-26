@@ -1,22 +1,26 @@
 # Elastic Search Attempts With Nest.js
 
-- To attempt elastic search queries on Nest.js
+- This is an MVC application in NestJS that executes Elasticsearch queries and allows testing from the front-end. It provides an environment for experimenting with Elasticsearch queries in a NestJS-based MVC application.
+
+![Front-end view](assets/application.png)
 
 ## Technologies
 
-## On Backend
+### On Backend
+
+---
 
 - Nest.js
 - Typescript
 - Elastic Search
 
-## On Frontend
+### On Frontend
+
+---
 
 - Handlebars
 
 ## Prerequisites
-
----
 
 - Docker
 - Node
@@ -25,10 +29,6 @@
 
 ## Running Application
 
-```
-yarn start:dev
-```
-
 ## Docker Run
 
 The application can be built and run by the `Docker` engine. The `Dockerfile` has multistage build, so you do not need to build and run separately.
@@ -36,18 +36,20 @@ The application can be built and run by the `Docker` engine. The `Dockerfile` ha
 Please follow the below directions in order to build and run the application with Docker Compose;
 
 ```sh
-$ cd open-weather
 $ docker-compose up -d
 ```
 
-OR
+<b>OR</b>
 
 ```sh
-$ cd open-weather
 $ ./build.sh
 ```
 
-Docker compose creates 2 replicas (instances) of the application.
+Docker compose creates 3 replicas (instances) of the application.
+
+### Application
+
+#### You can reach application via `http://{PORT}`
 
 ### Elastic Search
 
